@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Circuits and Expressions Trainer</title>
+<style>
+:root {
+  --bg: #eef3f7;
+  --paper: #ffffff;
+  --ink: #16243f;
+  --muted: #56647a;
+  --line: #cdd7e3;
+  --navy: #1c2b4a;
+  --teal: #0c7f82;
+  --teal-soft: #dcf1f1;
+  --amber: #b86e00;
+  --amber-soft: #fdf0d9;
+  --red: #b3342b;
+  --red-soft: #f9e3e1;
+  --chip: #e7edf3;
+  --gate-fill: #ffffff;
+  --on-strong: #ffffff;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1726; --paper: #172236; --ink: #e5ecf5; --muted: #9eadc2; --line: #2c3b55;
+    --navy: #9fb6e0; --teal: #4fc9c9; --teal-soft: #123a3e; --amber: #f0b454; --amber-soft: #3a2b12;
+    --red: #ff8f85; --red-soft: #3b1d1c; --chip: #22314a; --gate-fill: #1d2a42; --on-strong: #0f1726;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1726; --paper: #172236; --ink: #e5ecf5; --muted: #9eadc2; --line: #2c3b55;
+  --navy: #9fb6e0; --teal: #4fc9c9; --teal-soft: #123a3e; --amber: #f0b454; --amber-soft: #3a2b12;
+  --red: #ff8f85; --red-soft: #3b1d1c; --chip: #22314a; --gate-fill: #1d2a42; --on-strong: #0f1726;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font-body); font-size: 17px; line-height: 1.5; color: var(--ink); background: var(--bg); }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 18px 18px 48px; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+h1 { font-size: 1.8rem; margin: 0; color: var(--navy); }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+.btn {
+  font: inherit; font-weight: 600; cursor: pointer; border-radius: 8px; padding: 7px 13px;
+  border: 1px solid var(--line); background: var(--chip); color: var(--ink);
+}
+.btn:hover { border-color: var(--teal); }
+.btn-primary { background: var(--teal); border-color: var(--teal); color: var(--on-strong); }
+.btn-plain { background: transparent; }
+select, input[type="text"] { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.tab { border-radius: 999px; }
+.tab[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--paper); }
+.settings { display: flex; gap: 10px 18px; flex-wrap: wrap; align-items: flex-end; }
+.settings label { display: flex; flex-direction: column; gap: 3px; font-size: 0.88rem; color: var(--muted); }
+.settings label.inline { flex-direction: row; align-items: center; gap: 6px; }
+.tally { margin-left: auto; font-size: 0.95rem; }
+.tally b { font-family: var(--font-mono); color: var(--teal); font-size: 1.2rem; }
+.task { margin: 0 0 10px; font-size: 1.05rem; }
+.target { display: inline-block; font-family: var(--font-mono); font-size: 1.3rem; background: var(--chip); border-radius: 8px; padding: 6px 12px; margin: 0 0 12px; }
+.circuit-box { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--paper); }
+.circuit-box svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+.c-body { fill: var(--gate-fill); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.c-line { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+.c-wire { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.c-in { font: 700 17px var(--font-mono); fill: var(--ink); }
+.c-out { font: 700 17px var(--font-mono); fill: var(--ink); }
+.c-point { font: 700 15px var(--font-mono); fill: var(--teal); }
+.c-name { font: 700 10px var(--font-mono); fill: var(--muted); pointer-events: none; }
+.c-hit { fill: transparent; stroke: none; }
+.pickable { cursor: pointer; }
+.pickable:hover .c-hit { fill: var(--amber-soft); stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.wrong .c-hit { fill: var(--red-soft); stroke: var(--red); stroke-width: 2; stroke-dasharray: none; }
+.right .c-hit { fill: var(--teal-soft); stroke: var(--teal); stroke-width: 2; stroke-dasharray: none; }
+.pickable:focus { outline: none; }
+.pickable:focus-visible .c-hit { stroke: var(--amber); stroke-width: 3; }
+.answer-row { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+.answer-row .qeq { font-family: var(--font-mono); font-weight: 700; font-size: 1.3rem; }
+#answer { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 1.25rem; padding: 8px 12px; }
+.symbols { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.sym { font-family: var(--font-mono); min-width: 42px; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.feedback { margin-top: 12px; padding: 10px 12px; border-radius: 10px; border-left: 5px solid; }
+.feedback p { margin: 0 0 6px; }
+.feedback p:last-child { margin-bottom: 0; }
+.feedback ul { margin: 4px 0 0; padding-left: 1.2em; }
+.fb-good { background: var(--teal-soft); border-color: var(--teal); }
+.fb-bad { background: var(--red-soft); border-color: var(--red); }
+.fb-warn { background: var(--amber-soft); border-color: var(--amber); }
+code { font-family: var(--font-mono); background: var(--chip); padding: 1px 5px; border-radius: 5px; }
+.options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .options { grid-template-columns: 1fr; } }
+.options.single { grid-template-columns: 1fr; }
+.options.single .option svg { max-width: 760px; margin: 0 auto; }
+.option {
+  display: block; width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
+  background: var(--paper); border: 2px solid var(--line); border-radius: 10px; padding: 8px;
+}
+.option:hover { border-color: var(--teal); }
+.option .opt-label { font-weight: 700; display: block; margin-bottom: 4px; }
+.option svg { display: block; width: 100%; height: auto; }
+.option.right { border-color: var(--teal); background: var(--teal-soft); }
+.option.wrong { border-color: var(--red); background: var(--red-soft); }
+.tt { border-collapse: collapse; font-family: var(--font-mono); margin-top: 12px; }
+.tt th, .tt td { text-align: center; padding: 3px 6px; border-bottom: 1px solid var(--line); }
+.tt th { color: var(--navy); }
+.tt th.point { color: var(--teal); }
+.tt .split { border-left: 3px solid var(--navy); }
+.cell {
+  font: 700 1rem var(--font-mono); width: 40px; height: 30px; cursor: pointer; color: var(--ink);
+  border: 1px dashed var(--muted); border-radius: 6px; background: var(--paper);
+}
+.cell.filled { border-style: solid; background: var(--chip); }
+.cell.wrong { border-color: var(--red); background: var(--red-soft); }
+.cell.right { border-color: var(--teal); background: var(--teal-soft); }
+.table-scroll { overflow-x: auto; }
+.hint { color: var(--muted); font-size: 0.9rem; margin: 8px 0 0; }
+.gate-key { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Circuits and expressions</h1>
+    <button id="themeToggle" class="btn btn-plain" type="button"></button>
+  </header>
+
+  <div class="tabs" role="group" aria-label="Activity">
+    <button class="btn tab" type="button" data-mode="write">Write the expression</button>
+    <button class="btn tab" type="button" data-mode="choose">Choose the circuit</button>
+    <button class="btn tab" type="button" data-mode="fault">Find the fault</button>
+    <button class="btn tab" type="button" data-mode="table">Complete the truth table</button>
+  </div>
+
+  <section class="panel settings" aria-label="Settings">
+    <label>Inputs
+      <select id="inputCount">
+        <option value="2">2 (A, B)</option>
+        <option value="3" selected>3 (A, B, C)</option>
+        <option value="4">4 (A, B, C, D)</option>
+      </select>
+    </label>
+    <label>Circuit size
+      <select id="size">
+        <option value="small">Small (2–3 gates)</option>
+        <option value="medium" selected>Medium (3–4 gates)</option>
+        <option value="large">Large (5–6 gates)</option>
+      </select>
+    </label>
+    <label class="inline"><input type="checkbox" id="useXor"> Include XOR gates</label>
+    <label class="inline"><input type="checkbox" id="showNames"> Label gates</label>
+    <button id="newQuestion" class="btn btn-primary" type="button">New question</button>
+    <p class="tally" aria-live="polite">Right first time: <b id="tallyRight">0</b> of <b id="tallyTotal">0</b></p>
+  </section>
+
+  <section class="panel" id="question" aria-live="polite"></section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const NAMES = ['A', 'B', 'C', 'D'];
+  const POINT_NAMES = ['P', 'R', 'S', 'T', 'U', 'V', 'W'];
+  const SYMBOLS = { AND: '∧', OR: '∨', XOR: '⊻' };
+  const ARTICLE = { AND: 'an AND', OR: 'an OR', XOR: 'an XOR', NOT: 'a NOT' };
+  const COL = 120;
+  const SLOT = 70;
+  const TOP = 40;
+  const X0 = 110;
+
+  const state = {
+    mode: 'write',
+    question: null,
+    idCounter: 1,
+    right: 0,
+    total: 0
+  };
+
+  /* ---------- Helpers ---------- */
+
+  function randomInt(min, max) {
+    return min + Math.floor(Math.random() * (max - min + 1));
+  }
+
+  function pick(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function shuffle(list) {
+    const arr = list.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = temp;
+    }
+    return arr;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function newId() {
+    return 'n' + state.idCounter++;
+  }
+
+  function isBinary(node) {
+    return node.type === 'AND' || node.type === 'OR' || node.type === 'XOR';
+  }
+
+  function settings() {
+    return {
+      n: parseInt(document.getElementById('inputCount').value, 10),
+      size: document.getElementById('size').value,
+      xor: document.getElementById('useXor').checked,
+      names: document.getElementById('showNames').checked
+    };
+  }
+
+  function gateTypes(useXor) {
+    return useXor ? ['AND', 'OR', 'XOR'] : ['AND', 'OR'];
+  }
+
+  /* ---------- Expression trees ---------- */
+  // Nodes: {type:'VAR', name} | {type:'NOT', expr} | {type:'AND'|'OR'|'XOR', left, right}, each with an id.
+
+  function clone(node) {
+    return JSON.parse(JSON.stringify(node));
+  }
+
+  function children(node) {
+    if (node.type === 'NOT') { return [node.expr]; }
+    if (isBinary(node)) { return [node.left, node.right]; }
+    return [];
+  }
+
+  function listNodes(root) {
+    const out = [];
+    function walk(node, parent, side) {
+      out.push({ node: node, parent: parent, side: side });
+      if (node.type === 'NOT') { walk(node.expr, node, 'expr'); }
+      if (isBinary(node)) {
+        walk(node.left, node, 'left');
+        walk(node.right, node, 'right');
+      }
+    }
+    walk(root, null, null);
+    return out;
+  }
+
+  function assignIds(root) {
+    listNodes(root).forEach(function (entry) { entry.node.id = newId(); });
+    return root;
+  }
+
+  function findNode(root, id) {
+    const all = listNodes(root);
+    for (let i = 0; i < all.length; i++) {
+      if (all[i].node.id === id) { return all[i]; }
+    }
+    return null;
+  }
+
+  function exprText(node) {
+    if (node.type === 'VAR') { return node.name; }
+    if (node.type === 'NOT') {
+      const inner = exprText(node.expr);
+      return node.expr.type === 'VAR' || node.expr.type === 'NOT' ? '¬' + inner : '¬(' + inner + ')';
+    }
+    const parts = [node.left, node.right].map(function (child) {
+      const text = exprText(child);
+      return isBinary(child) && child.type !== node.type ? '(' + text + ')' : text;
+    });
+    return parts[0] + ' ' + SYMBOLS[node.type] + ' ' + parts[1];
+  }
+
+  function evalTree(node, env) {
+    if (node.type === 'VAR') { return env[node.name]; }
+    if (node.type === 'NOT') { return 1 - evalTree(node.expr, env); }
+    const a = evalTree(node.left, env);
+    const b = evalTree(node.right, env);
+    if (node.type === 'AND') { return a & b; }
+    if (node.type === 'OR') { return a | b; }
+    return a ^ b;
+  }
+
+  function envFor(m, n) {
+    const env = {};
+    for (let i = 0; i < n; i++) {
+      env[NAMES[i]] = (m >> (n - 1 - i)) & 1;
+    }
+    return env;
+  }
+
+  function tableOf(tree, n) {
+    const out = [];
+    for (let m = 0; m < (1 << n); m++) {
+      out.push(evalTree(tree, envFor(m, n)));
+    }
+    return out;
+  }
+
+  function sameTable(a, b) {
+    return a.join('') === b.join('');
+  }
+
+  function dependsOnAll(tree, n) {
+    const table = tableOf(tree, n);
+    for (let i = 0; i < n; i++) {
+      const bit = 1 << (n - 1 - i);
+      let matters = false;
+      for (let m = 0; m < table.length; m++) {
+        if (table[m] !== table[m ^ bit]) {
+          matters = true;
+          break;
+        }
+      }
+      if (!matters) { return false; }
+    }
+    return true;
+  }
+
+  function gateDepth(node) {
+    if (node.type === 'VAR') { return -1; }
+    let deepest = -1;
+    children(node).forEach(function (child) {
+      deepest = Math.max(deepest, gateDepth(child));
+    });
+    return deepest + 1;
+  }
+
+  function hasDuplicatePair(root) {
+    return listNodes(root).some(function (entry) {
+      const node = entry.node;
+      return isBinary(node) && exprText(node.left) === exprText(node.right);
+    });
+  }
+
+  function firstName(node) {
+    if (node.type === 'VAR') { return node.name; }
+    if (node.type === 'NOT') { return firstName(node.expr); }
+    return firstName(node.left) < firstName(node.right) ? firstName(node.left) : firstName(node.right);
+  }
+
+  // Swaps the inputs of gates (which doesn't change the output) so inputs read in alphabetical order where possible.
+  function tidyOrder(node) {
+    children(node).forEach(tidyOrder);
+    if (isBinary(node) && firstName(node.right) < firstName(node.left)) {
+      const temp = node.left;
+      node.left = node.right;
+      node.right = temp;
+    }
+  }
+
+  function replaceChild(parent, side, replacement) {
+    parent[side] = replacement;
+  }
+
+  function generateTree(n, size, useXor) {
+    const ranges = { small: [2, 3], medium: [3, 4], large: [5, 6] };
+    const range = ranges[size];
+    for (let attempt = 0; attempt < 800; attempt++) {
+      const total = randomInt(range[0], range[1]);
+      const room = total - (n - 1);
+      const nots = room > 0 ? randomInt(0, Math.min(2, room)) : 0;
+      const binaries = Math.min(6, Math.max(total - nots, n - 1));
+      const vars = NAMES.slice(0, n);
+      while (vars.length < binaries + 1) {
+        vars.push(NAMES[randomInt(0, n - 1)]);
+      }
+      const pool = shuffle(vars);
+
+      function shape(count) {
+        if (count === 0) {
+          return { type: 'VAR', name: pool.pop() };
+        }
+        const leftCount = randomInt(0, count - 1);
+        const types = useXor ? ['AND', 'AND', 'OR', 'OR', 'XOR'] : ['AND', 'OR'];
+        return { type: pick(types), left: shape(leftCount), right: shape(count - 1 - leftCount) };
+      }
+
+      let root = shape(binaries);
+      for (let k = 0; k < nots; k++) {
+        const spots = listNodes(root).filter(function (entry) {
+          return entry.node.type !== 'NOT' && !(entry.parent && entry.parent.type === 'NOT');
+        });
+        const spot = pick(spots);
+        const wrapped = { type: 'NOT', expr: spot.node };
+        if (spot.parent) {
+          replaceChild(spot.parent, spot.side, wrapped);
+        } else {
+          root = wrapped;
+        }
+      }
+      if (hasDuplicatePair(root) || gateDepth(root) > 5 || !dependsOnAll(root, n)) {
+        continue;
+      }
+      tidyOrder(root);
+      return assignIds(root);
+    }
+    return assignIds({ type: 'AND', left: { type: 'VAR', name: 'A' }, right: { type: 'VAR', name: 'B' } });
+  }
+
+  // Makes one deliberate change to a copy of the tree and describes it.
+  function mutate(root, n, useXor) {
+    let copy = clone(root);
+    const entries = listNodes(copy);
+    const kind = pick(['gate', 'gate', 'removeNot', 'addNot', 'input']);
+
+    if (kind === 'gate') {
+      const options = entries.filter(function (e) { return isBinary(e.node); });
+      if (!options.length) { return null; }
+      const e = pick(options);
+      const old = e.node.type;
+      const choices = gateTypes(useXor).filter(function (t) { return t !== old; });
+      const nt = pick(choices);
+      e.node.type = nt;
+      return {
+        tree: copy, faultId: e.node.id,
+        desc: 'has ' + ARTICLE[nt] + ' gate where the expression needs ' + ARTICLE[old] + ' gate.',
+        fix: 'This should be ' + ARTICLE[old] + ' gate, not ' + ARTICLE[nt] + ' gate.'
+      };
+    }
+    if (kind === 'removeNot') {
+      const options = entries.filter(function (e) { return e.node.type === 'NOT' && e.parent; });
+      if (!options.length) { return null; }
+      const e = pick(options);
+      replaceChild(e.parent, e.side, e.node.expr);
+      return {
+        tree: copy, faultId: e.parent.id,
+        desc: 'is missing the NOT gate needed for ' + exprText(e.node) + '.',
+        fix: 'One input to this gate should go through a NOT gate first. The expression has ' + exprText(e.node) + ' here.'
+      };
+    }
+    if (kind === 'addNot') {
+      const options = entries.filter(function (e) {
+        return e.node.type !== 'NOT' && !(e.parent && e.parent.type === 'NOT');
+      });
+      if (!options.length) { return null; }
+      const e = pick(options);
+      const added = { type: 'NOT', expr: e.node, id: newId() };
+      if (e.parent) {
+        replaceChild(e.parent, e.side, added);
+      } else {
+        copy = added;
+      }
+      return {
+        tree: copy, faultId: added.id,
+        desc: 'has an extra NOT gate on ' + exprText(e.node) + '.',
+        fix: 'This NOT gate shouldn\'t be here. The expression uses ' + exprText(e.node) + ' without inverting it.'
+      };
+    }
+    const leaves = entries.filter(function (e) { return e.node.type === 'VAR'; });
+    const e = pick(leaves);
+    const old = e.node.name;
+    const others = NAMES.slice(0, n).filter(function (name) { return name !== old; });
+    e.node.name = pick(others);
+    return {
+      tree: copy, faultId: e.node.id,
+      desc: 'uses input ' + e.node.name + ' where the expression has ' + old + '.',
+      fix: 'This input should be ' + old + ', not ' + e.node.name + '.'
+    };
+  }
+
+  function distinctMutation(root, n, useXor, avoidTables, singleOnly) {
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const result = mutate(root, n, useXor);
+      if (!result || gateDepth(result.tree) > 6) { continue; }
+      const table = tableOf(result.tree, n);
+      const clash = avoidTables.some(function (t) { return sameTable(t, table); });
+      if (!clash) {
+        result.table = table;
+        return result;
+      }
+    }
+    for (let attempt = 0; attempt < 300 && !singleOnly; attempt++) {
+      const first = mutate(root, n, useXor);
+      const second = first ? mutate(first.tree, n, useXor) : null;
+      if (!second || gateDepth(second.tree) > 6) { continue; }
+      const table = tableOf(second.tree, n);
+      const clash = avoidTables.some(function (t) { return sameTable(t, table); });
+      if (!clash) {
+        const desc = first.desc.replace(/\.$/, '') + ', and ' + second.desc;
+        return { tree: second.tree, table: table, desc: desc, faultId: second.faultId, fix: second.fix };
+      }
+    }
+    return null;
+  }
+
+  /* ---------- Expression parser (for students' answers) ---------- */
+
+  function tokenise(text, n) {
+    const tokens = [];
+    let i = 0;
+    while (i < text.length) {
+      const ch = text.charAt(i);
+      if (/\s/.test(ch)) { i++; continue; }
+      if (ch === '(') { tokens.push({ type: 'lp', text: ch }); i++; continue; }
+      if (ch === ')') { tokens.push({ type: 'rp', text: ch }); i++; continue; }
+      if ('¬!~'.indexOf(ch) !== -1) { tokens.push({ type: 'not', text: ch }); i++; continue; }
+      if ('∧&.*·'.indexOf(ch) !== -1) { tokens.push({ type: 'and', text: ch }); i++; continue; }
+      if ('∨|+'.indexOf(ch) !== -1) { tokens.push({ type: 'or', text: ch }); i++; continue; }
+      if ('⊻^⊕'.indexOf(ch) !== -1) { tokens.push({ type: 'xor', text: ch }); i++; continue; }
+      if (/[A-Za-z]/.test(ch)) {
+        let word = '';
+        while (i < text.length && /[A-Za-z]/.test(text.charAt(i))) {
+          word += text.charAt(i);
+          i++;
+        }
+        const upper = word.toUpperCase();
+        if (upper === 'AND' || upper === 'OR' || upper === 'NOT' || upper === 'XOR') {
+          tokens.push({ type: upper.toLowerCase(), text: word });
+          continue;
+        }
+        for (let k = 0; k < upper.length; k++) {
+          const index = NAMES.indexOf(upper.charAt(k));
+          if (index === -1 || index >= n) {
+            throw new Error('"' + word + '" isn\'t recognised. This circuit\'s inputs are ' + NAMES.slice(0, n).join(', ') + '.');
+          }
+          tokens.push({ type: 'var', name: upper.charAt(k), text: upper.charAt(k) });
+        }
+        continue;
+      }
+      throw new Error('The symbol "' + ch + '" isn\'t recognised.');
+    }
+    return tokens;
+  }
+
+  function parseExpression(text, n) {
+    const tokens = tokenise(text, n);
+    if (!tokens.length) { throw new Error('Type an expression first.'); }
+    let pos = 0;
+    function peek() { return tokens[pos]; }
+    function startsOperand(t) { return t && (t.type === 'var' || t.type === 'not' || t.type === 'lp'); }
+    function parseOr() {
+      let left = parseXor();
+      while (peek() && peek().type === 'or') { pos++; left = { type: 'OR', left: left, right: parseXor() }; }
+      return left;
+    }
+    function parseXor() {
+      let left = parseAnd();
+      while (peek() && peek().type === 'xor') { pos++; left = { type: 'XOR', left: left, right: parseAnd() }; }
+      return left;
+    }
+    function parseAnd() {
+      let left = parseNot();
+      while (peek() && (peek().type === 'and' || startsOperand(peek()))) {
+        if (peek().type === 'and') { pos++; }
+        left = { type: 'AND', left: left, right: parseNot() };
+      }
+      return left;
+    }
+    function parseNot() {
+      if (peek() && peek().type === 'not') { pos++; return { type: 'NOT', expr: parseNot() }; }
+      return parseAtom();
+    }
+    function parseAtom() {
+      const t = peek();
+      if (!t) { throw new Error('The expression stops too soon. Is something missing after an operator?'); }
+      if (t.type === 'var') { pos++; return { type: 'VAR', name: t.name }; }
+      if (t.type === 'lp') {
+        pos++;
+        const inner = parseOr();
+        if (!peek() || peek().type !== 'rp') { throw new Error('A bracket has been opened but not closed.'); }
+        pos++;
+        return inner;
+      }
+      if (t.type === 'rp') { throw new Error('There\'s a closing bracket where a variable should be.'); }
+      throw new Error('"' + t.text + '" needs something before it.');
+    }
+    const tree = parseOr();
+    if (pos < tokens.length) {
+      throw new Error(tokens[pos].type === 'rp' ? 'There\'s a closing bracket without a matching opening bracket.' : '"' + tokens[pos].text + '" is in an unexpected place.');
+    }
+    return tree;
+  }
+
+  /* ---------- Circuit drawing ---------- */
+
+  function layout(root) {
+    const maxDepth = gateDepth(root);
+    let slot = 0;
+    const leaves = [];
+    function place(node, depth) {
+      if (node.type === 'VAR') {
+        node.y = TOP + slot * SLOT;
+        slot++;
+        leaves.push(node);
+        return node.y;
+      }
+      node.x = X0 + (maxDepth - depth) * COL;
+      if (node.type === 'NOT') {
+        node.y = place(node.expr, depth + 1);
+      } else {
+        const a = place(node.left, depth + 1);
+        const b = place(node.right, depth + 1);
+        node.y = (a + b) / 2;
+      }
+      return node.y;
+    }
+    place(root, 0);
+    return {
+      width: root.x + 80 + 70,
+      height: TOP * 2 + (leaves.length - 1) * SLOT,
+      leaves: leaves
+    };
+  }
+
+  function gateShape(type) {
+    if (type === 'AND') {
+      return '<path class="c-body" d="M10 0 H40 A30 30 0 0 1 40 60 H10 Z"></path>' +
+        '<path class="c-line" d="M0 15 H10 M0 45 H10 M70 30 H80"></path>';
+    }
+    if (type === 'OR') {
+      return '<path class="c-body" d="M8 0 Q28 30 8 60 Q48 60 70 30 Q48 0 8 0 Z"></path>' +
+        '<path class="c-line" d="M0 15 H15 M0 45 H15 M70 30 H80"></path>';
+    }
+    if (type === 'XOR') {
+      return '<path class="c-body" d="M14 0 Q34 30 14 60 Q54 60 72 30 Q54 0 14 0 Z"></path>' +
+        '<path class="c-line" d="M4 0 Q24 30 4 60 M0 15 H11 M0 45 H11 M72 30 H80"></path>';
+    }
+    return '<path class="c-body" d="M12 8 L12 52 L58 30 Z"></path><circle class="c-body" cx="64" cy="30" r="6"></circle>' +
+      '<path class="c-line" d="M0 30 H12 M70 30 H80"></path>';
+  }
+
+  function nameX(type) {
+    if (type === 'NOT') { return 28; }
+    if (type === 'AND') { return 38; }
+    return 40;
+  }
+
+  // opts: { pickable, marks: {id: 'right'|'wrong'}, points: {id: letter}, names }
+  function circuitSvg(source, opts) {
+    const root = clone(source);
+    const size = layout(root);
+    let wires = '';
+    let parts = '';
+    const nodes = listNodes(root).map(function (e) { return e.node; });
+
+    nodes.forEach(function (node) {
+      if (node.type === 'VAR') { return; }
+      const kids = children(node);
+      kids.forEach(function (child, i) {
+        const pinY = node.type === 'NOT' ? node.y : node.y + (i === 0 ? -15 : 15);
+        const jogX = node.x - 20;
+        const startX = child.type === 'VAR' ? 42 : child.x + 80;
+        if (child.y === pinY) {
+          wires += '<path class="c-wire" d="M' + startX + ' ' + child.y + ' H' + node.x + '"></path>';
+        } else {
+          wires += '<path class="c-wire" d="M' + startX + ' ' + child.y + ' H' + jogX + ' V' + pinY + ' H' + node.x + '"></path>';
+        }
+      });
+    });
+    wires += '<path class="c-wire" d="M' + (root.x + 80) + ' ' + root.y + ' H' + (root.x + 112) + '"></path>';
+
+    nodes.forEach(function (node) {
+      const mark = opts.marks && opts.marks[node.id] ? ' ' + opts.marks[node.id] : '';
+      const pickAttrs = opts.pickable ? ' class="pickable' + mark + '" data-node="' + node.id + '" tabindex="0" role="button"' : ' class="' + mark + '"';
+      if (node.type === 'VAR') {
+        parts += '<g' + pickAttrs + (opts.pickable ? ' aria-label="Input ' + node.name + '"' : '') + '>' +
+          '<rect class="c-hit" x="4" y="' + (node.y - 16) + '" width="40" height="32" rx="6"></rect>' +
+          '<text class="c-in" x="14" y="' + node.y + '" dominant-baseline="central">' + node.name + '</text></g>';
+        return;
+      }
+      parts += '<g' + pickAttrs + (opts.pickable ? ' aria-label="' + node.type + ' gate"' : '') + '>' +
+        '<g transform="translate(' + node.x + ',' + (node.y - 30) + ')">' +
+        '<rect class="c-hit" x="-6" y="-8" width="92" height="76" rx="10"></rect>' + gateShape(node.type) +
+        (opts.names ? '<text class="c-name" x="' + nameX(node.type) + '" y="30" text-anchor="middle" dominant-baseline="central">' + node.type + '</text>' : '') +
+        '</g></g>';
+      if (opts.points && opts.points[node.id]) {
+        parts += '<text class="c-point" x="' + (node.x + 88) + '" y="' + (node.y - 10) + '">' + opts.points[node.id] + '</text>';
+      }
+    });
+    parts += '<text class="c-out" x="' + (root.x + 118) + '" y="' + root.y + '" dominant-baseline="central">Q</text>';
+
+    const width = Math.max(size.width, opts.width || 0);
+    const height = Math.max(size.height, opts.height || 0);
+    return '<svg viewBox="0 0 ' + width + ' ' + height + '" width="' + width + '" role="img" aria-label="Logic circuit">' +
+      wires + parts + '</svg>';
+  }
+
+  /* ---------- Questions ---------- */
+
+  function makeQuestion(mode) {
+    const s = settings();
+    const tree = generateTree(s.n, s.size, s.xor);
+    const q = { mode: mode, n: s.n, xor: s.xor, tree: tree, table: tableOf(tree, s.n), counted: false, firstTry: true, done: false, feedback: null };
+
+    if (mode === 'write') {
+      q.answer = '';
+    } else if (mode === 'choose') {
+      const tables = [q.table];
+      const options = [{ tree: tree, correct: true }];
+      for (let k = 0; k < 3; k++) {
+        const m = distinctMutation(tree, s.n, s.xor, tables);
+        if (m) {
+          tables.push(m.table);
+          options.push({ tree: m.tree, correct: false, desc: m.desc });
+        }
+      }
+      q.options = shuffle(options);
+      q.marks = {};
+    } else if (mode === 'fault') {
+      const m = distinctMutation(tree, s.n, s.xor, [q.table], true);
+      q.shown = m.tree;
+      q.faultId = m.faultId;
+      q.fix = m.fix;
+      q.marks = {};
+    } else {
+      const gates = listNodes(tree).map(function (e) { return e.node; }).filter(function (node) {
+        return node.type !== 'VAR' && node.id !== tree.id;
+      });
+      const temp = clone(tree);
+      layout(temp);
+      const pos = {};
+      listNodes(temp).forEach(function (e) { pos[e.node.id] = e.node; });
+      gates.sort(function (a, b) { return (pos[a.id].x - pos[b.id].x) || (pos[a.id].y - pos[b.id].y); });
+      q.points = {};
+      q.columns = [];
+      gates.forEach(function (node, i) {
+        q.points[node.id] = POINT_NAMES[i];
+        q.columns.push({ name: POINT_NAMES[i], values: tableOf(node, s.n) });
+      });
+      q.columns.push({ name: 'Q', values: q.table });
+      q.entries = q.columns.map(function (col) { return col.values.map(function () { return ''; }); });
+      q.cellMarks = null;
+    }
+    return q;
+  }
+
+  function newQuestion() {
+    state.question = makeQuestion(state.mode);
+    render();
+  }
+
+  function countResult(q, correct) {
+    if (q.counted) { return; }
+    q.counted = true;
+    state.total++;
+    if (correct) { state.right++; }
+    document.getElementById('tallyRight').textContent = state.right;
+    document.getElementById('tallyTotal').textContent = state.total;
+  }
+
+  function describeRow(m, n) {
+    const env = envFor(m, n);
+    return NAMES.slice(0, n).map(function (name) { return name + ' = ' + env[name]; }).join(', ');
+  }
+
+  /* ---------- Rendering ---------- */
+
+  function feedbackHtml(q) {
+    if (!q.feedback) { return ''; }
+    return '<div class="feedback fb-' + q.feedback.kind + '">' + q.feedback.html + '</div>';
+  }
+
+  function nextButton() {
+    return '<button class="btn btn-primary" type="button" data-action="next">Next question</button>';
+  }
+
+  function render() {
+    const q = state.question;
+    const s = settings();
+    const box = document.getElementById('question');
+    let html = '';
+
+    if (q.mode === 'write') {
+      html += '<p class="task">Write a Boolean expression for the output Q of this circuit.</p>';
+      html += '<div class="circuit-box">' + circuitSvg(q.tree, { names: s.names }) + '</div>';
+      html += '<div class="answer-row"><span class="qeq">Q =</span><input type="text" id="answer" autocomplete="off" spellcheck="false" aria-label="Your expression" value="' + escapeHtml(q.answer) + '"' + (q.done ? ' disabled' : '') + '></div>';
+      html += '<div class="symbols">' + ['∧', '∨', '¬', '⊻', '(', ')'].map(function (sym) {
+        const insert = sym === '¬' || sym === '(' || sym === ')' ? sym : ' ' + sym + ' ';
+        return '<button class="btn sym" type="button" data-insert="' + insert + '">' + sym + '</button>';
+      }).join('') + '</div>';
+      html += '<p class="hint">You can also type AND, OR, NOT and XOR. Any equivalent expression is accepted.</p>';
+      html += '<div class="actions">' + (q.done ? nextButton() :
+        '<button class="btn btn-primary" type="button" data-action="check">Check</button><button class="btn" type="button" data-action="reveal">Show answer</button>') + '</div>';
+    } else if (q.mode === 'choose') {
+      html += '<p class="task">Which circuit matches this expression?</p>';
+      html += '<div class="target">Q = ' + escapeHtml(exprText(q.tree)) + '</div>';
+      let maxWidth = 0;
+      let maxHeight = 0;
+      q.options.forEach(function (opt) {
+        const dims = layout(clone(opt.tree));
+        maxWidth = Math.max(maxWidth, dims.width);
+        maxHeight = Math.max(maxHeight, dims.height);
+      });
+      html += '<div class="options' + (maxWidth > 700 ? ' single' : '') + '">';
+      q.options.forEach(function (opt, i) {
+        const mark = q.marks[i] ? ' ' + q.marks[i] : '';
+        html += '<button class="option' + mark + '" type="button" data-option="' + i + '"' + (q.done ? ' disabled' : '') + '>' +
+          '<span class="opt-label">Circuit ' + (i + 1) + '</span>' + circuitSvg(opt.tree, { names: s.names, width: maxWidth, height: maxHeight }) + '</button>';
+      });
+      html += '</div>';
+      html += '<div class="actions">' + (q.done ? nextButton() : '<button class="btn" type="button" data-action="reveal">Show answer</button>') + '</div>';
+    } else if (q.mode === 'fault') {
+      html += '<p class="task">This circuit is meant to represent the expression below, but it contains one mistake. Select the gate or input that is wrong.</p>';
+      html += '<div class="target">Q = ' + escapeHtml(exprText(q.tree)) + '</div>';
+      html += '<div class="circuit-box">' + circuitSvg(q.shown, { names: s.names, pickable: !q.done, marks: q.marks }) + '</div>';
+      html += '<div class="actions">' + (q.done ? nextButton() : '<button class="btn" type="button" data-action="reveal">Show answer</button>') + '</div>';
+    } else {
+      html += '<p class="task">Complete the truth table for this circuit. The letters on the circuit show where each column is measured.</p>';
+      html += '<div class="circuit-box">' + circuitSvg(q.tree, { names: s.names, points: q.points }) + '</div>';
+      html += '<div class="table-scroll"><table class="tt"><thead><tr>';
+      NAMES.slice(0, q.n).forEach(function (name) { html += '<th scope="col">' + name + '</th>'; });
+      q.columns.forEach(function (col, c) {
+        html += '<th scope="col" class="' + (col.name === 'Q' ? '' : 'point') + (c === 0 ? ' split' : '') + '">' + col.name + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+      for (let m = 0; m < (1 << q.n); m++) {
+        html += '<tr>';
+        const env = envFor(m, q.n);
+        NAMES.slice(0, q.n).forEach(function (name) { html += '<td>' + env[name] + '</td>'; });
+        q.columns.forEach(function (col, c) {
+          const value = q.entries[c][m];
+          const mark = q.cellMarks ? ' ' + q.cellMarks[c][m] : '';
+          html += '<td' + (c === 0 ? ' class="split"' : '') + '><button class="cell' + (value !== '' ? ' filled' : '') + mark + '" type="button" data-cell="' + c + ',' + m + '"' +
+            ' aria-label="' + col.name + ' for ' + describeRow(m, q.n) + '"' + (q.done ? ' disabled' : '') + '>' + value + '</button></td>';
+        });
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+      html += '<p class="hint">Select a cell to cycle through blank, 0 and 1, or select it and type 0 or 1.</p>';
+      html += '<div class="actions">' + (q.done ? nextButton() :
+        '<button class="btn btn-primary" type="button" data-action="check">Check</button><button class="btn" type="button" data-action="reveal">Show answer</button>') + '</div>';
+    }
+
+    html += feedbackHtml(q);
+    box.innerHTML = html;
+
+    const buttons = document.querySelectorAll('[data-mode]');
+    for (let i = 0; i < buttons.length; i++) {
+      buttons[i].setAttribute('aria-pressed', buttons[i].getAttribute('data-mode') === state.mode ? 'true' : 'false');
+    }
+  }
+
+  /* ---------- Answer handling ---------- */
+
+  function checkWrite() {
+    const q = state.question;
+    let tree;
+    try {
+      tree = parseExpression(q.answer.trim(), q.n);
+    } catch (err) {
+      q.feedback = { kind: 'warn', html: '<p>' + escapeHtml(err.message) + '</p>' };
+      render();
+      return;
+    }
+    const table = tableOf(tree, q.n);
+    if (sameTable(table, q.table)) {
+      countResult(q, q.firstTry);
+      q.done = true;
+      let html = '<p><strong>Correct!</strong> Your expression gives the same output as the circuit for every input.</p>';
+      if (exprText(tree) !== exprText(q.tree)) {
+        html += '<p>Reading the circuit gate by gate gives <code>Q = ' + escapeHtml(exprText(q.tree)) + '</code>. Yours is equivalent.</p>';
+      }
+      q.feedback = { kind: 'good', html: html };
+    } else {
+      countResult(q, false);
+      q.firstTry = false;
+      let m = 0;
+      while (table[m] === q.table[m]) { m++; }
+      q.feedback = {
+        kind: 'bad',
+        html: '<p><strong>Not quite.</strong> When ' + describeRow(m, q.n) + ', your expression gives ' + table[m] +
+          ' but the circuit gives ' + q.table[m] + '.</p><p>Work from the inputs towards Q, writing down what comes out of each gate.</p>'
+      };
+    }
+    render();
+  }
+
+  function revealWrite() {
+    const q = state.question;
+    countResult(q, false);
+    q.done = true;
+    q.feedback = { kind: 'warn', html: '<p>Reading the circuit gate by gate gives <code>Q = ' + escapeHtml(exprText(q.tree)) + '</code></p>' };
+    render();
+  }
+
+  function differencesList(q) {
+    let html = '<ul>';
+    q.options.forEach(function (opt, i) {
+      if (!opt.correct) {
+        html += '<li>Circuit ' + (i + 1) + ' ' + escapeHtml(opt.desc) + '</li>';
+      }
+    });
+    return html + '</ul>';
+  }
+
+  function chooseOption(index) {
+    const q = state.question;
+    if (q.done) { return; }
+    const opt = q.options[index];
+    if (opt.correct) {
+      countResult(q, q.firstTry);
+      q.done = true;
+      q.marks[index] = 'right';
+      q.feedback = { kind: 'good', html: '<p><strong>Correct!</strong> Circuit ' + (index + 1) + ' matches the expression. Here\'s what\'s wrong with the others:</p>' + differencesList(q) };
+    } else {
+      countResult(q, false);
+      q.firstTry = false;
+      q.marks[index] = 'wrong';
+      q.feedback = { kind: 'bad', html: '<p><strong>Not that one.</strong> Circuit ' + (index + 1) + ' ' + escapeHtml(opt.desc) + ' Try again.</p>' };
+    }
+    render();
+  }
+
+  function revealChoose() {
+    const q = state.question;
+    countResult(q, false);
+    q.done = true;
+    q.options.forEach(function (opt, i) {
+      if (opt.correct) { q.marks[i] = 'right'; }
+    });
+    const index = q.options.map(function (o) { return o.correct; }).indexOf(true);
+    q.feedback = { kind: 'warn', html: '<p>Circuit ' + (index + 1) + ' is the correct one. The others differ like this:</p>' + differencesList(q) };
+    render();
+  }
+
+  function pickNode(id) {
+    const q = state.question;
+    if (q.done) { return; }
+    if (id === q.faultId) {
+      countResult(q, q.firstTry);
+      q.done = true;
+      q.marks[id] = 'right';
+      q.feedback = { kind: 'good', html: '<p><strong>Well spotted!</strong> ' + escapeHtml(q.fix) + '</p>' };
+    } else {
+      countResult(q, false);
+      q.firstTry = false;
+      q.marks[id] = 'wrong';
+      const entry = findNode(q.shown, id);
+      const what = entry.node.type === 'VAR' ? 'Input ' + entry.node.name : 'That ' + entry.node.type + ' gate';
+      q.feedback = { kind: 'bad', html: '<p><strong>Not that one.</strong> ' + what + ' matches the expression. Compare each part of the expression with the circuit and try again.</p>' };
+    }
+    render();
+  }
+
+  function revealFault() {
+    const q = state.question;
+    countResult(q, false);
+    q.done = true;
+    q.marks = {};
+    q.marks[q.faultId] = 'right';
+    q.feedback = { kind: 'warn', html: '<p>The highlighted part is wrong. ' + escapeHtml(q.fix) + '</p>' };
+    render();
+  }
+
+  function checkTable() {
+    const q = state.question;
+    let blanks = 0;
+    let wrong = 0;
+    q.cellMarks = q.columns.map(function (col, c) {
+      return col.values.map(function (value, m) {
+        const entry = q.entries[c][m];
+        if (entry === '') { blanks++; return ''; }
+        if (Number(entry) !== value) { wrong++; return 'wrong'; }
+        return 'right';
+      });
+    });
+    if (blanks > 0 && wrong === 0) {
+      q.feedback = { kind: 'warn', html: '<p>Everything you\'ve filled in so far is right. ' + blanks + ' cell' + (blanks === 1 ? ' is' : 's are') + ' still blank.</p>' };
+    } else if (wrong > 0) {
+      countResult(q, false);
+      q.firstTry = false;
+      q.feedback = { kind: 'bad', html: '<p><strong>' + wrong + ' cell' + (wrong === 1 ? ' is' : 's are') + ' wrong</strong> (shown in red). Check the gate that produces each of those columns and what feeds into it.</p>' };
+    } else {
+      countResult(q, q.firstTry);
+      q.done = true;
+      q.feedback = { kind: 'good', html: '<p><strong>Correct!</strong> Every cell is right. As an expression, <code>Q = ' + escapeHtml(exprText(q.tree)) + '</code></p>' };
+    }
+    render();
+  }
+
+  function revealTable() {
+    const q = state.question;
+    countResult(q, false);
+    q.done = true;
+    q.entries = q.columns.map(function (col) { return col.values.map(String); });
+    q.cellMarks = null;
+    q.feedback = { kind: 'warn', html: '<p>Here are the answers. As an expression, <code>Q = ' + escapeHtml(exprText(q.tree)) + '</code></p>' };
+    render();
+  }
+
+  function setCell(c, m, value) {
+    const q = state.question;
+    if (q.done) { return; }
+    q.entries[c][m] = value;
+    if (q.cellMarks) { q.cellMarks[c][m] = ''; }
+    render();
+    const again = document.querySelector('[data-cell="' + c + ',' + m + '"]');
+    if (again) { again.focus(); }
+  }
+
+  /* ---------- Events ---------- */
+
+  function setupEvents() {
+    const box = document.getElementById('question');
+
+    box.addEventListener('click', function (event) {
+      const q = state.question;
+      const action = event.target.closest('[data-action]');
+      if (action) {
+        const name = action.getAttribute('data-action');
+        if (name === 'next') { newQuestion(); return; }
+        if (q.mode === 'write') { if (name === 'check') { checkWrite(); } else { revealWrite(); } }
+        if (q.mode === 'choose') { revealChoose(); }
+        if (q.mode === 'fault') { revealFault(); }
+        if (q.mode === 'table') { if (name === 'check') { checkTable(); } else { revealTable(); } }
+        return;
+      }
+      const insert = event.target.closest('[data-insert]');
+      if (insert) {
+        const input = document.getElementById('answer');
+        const start = input.selectionStart === null ? input.value.length : input.selectionStart;
+        const end = input.selectionEnd === null ? input.value.length : input.selectionEnd;
+        const text = insert.getAttribute('data-insert');
+        input.value = input.value.slice(0, start) + text + input.value.slice(end);
+        q.answer = input.value;
+        input.focus();
+        input.setSelectionRange(start + text.length, start + text.length);
+        return;
+      }
+      const option = event.target.closest('[data-option]');
+      if (option) { chooseOption(parseInt(option.getAttribute('data-option'), 10)); return; }
+      const node = event.target.closest('[data-node]');
+      if (node) { pickNode(node.getAttribute('data-node')); return; }
+      const cell = event.target.closest('[data-cell]');
+      if (cell) {
+        const parts = cell.getAttribute('data-cell').split(',');
+        const c = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const current = q.entries[c][m];
+        setCell(c, m, current === '' ? '0' : (current === '0' ? '1' : ''));
+      }
+    });
+
+    box.addEventListener('input', function (event) {
+      if (event.target.id === 'answer') {
+        state.question.answer = event.target.value;
+      }
+    });
+
+    box.addEventListener('keydown', function (event) {
+      if (event.target.id === 'answer' && event.key === 'Enter') {
+        checkWrite();
+        return;
+      }
+      const node = event.target.closest('[data-node]');
+      if (node && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        pickNode(node.getAttribute('data-node'));
+        return;
+      }
+      const cell = event.target.closest('[data-cell]');
+      if (cell && (event.key === '0' || event.key === '1' || event.key === 'Backspace' || event.key === 'Delete')) {
+        event.preventDefault();
+        const parts = cell.getAttribute('data-cell').split(',');
+        setCell(parseInt(parts[0], 10), parseInt(parts[1], 10), event.key === '0' || event.key === '1' ? event.key : '');
+      }
+    });
+
+    const tabs = document.querySelectorAll('[data-mode]');
+    for (let i = 0; i < tabs.length; i++) {
+      tabs[i].addEventListener('click', function (event) {
+        state.mode = event.currentTarget.getAttribute('data-mode');
+        newQuestion();
+      });
+    }
+    document.getElementById('newQuestion').addEventListener('click', newQuestion);
+    document.getElementById('inputCount').addEventListener('change', newQuestion);
+    document.getElementById('size').addEventListener('change', newQuestion);
+    document.getElementById('useXor').addEventListener('change', newQuestion);
+    document.getElementById('showNames').addEventListener('change', render);
+  }
+
+  function setupThemeToggle() {
+    const button = document.getElementById('themeToggle');
+    const root = document.documentElement;
+    function label() {
+      const dark = root.getAttribute('data-theme') === 'dark';
+      button.textContent = dark ? '☀️ Light mode' : '🌙 Dark mode';
+      button.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    }
+    button.addEventListener('click', function () {
+      root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      label();
+    });
+    label();
+  }
+
+  setupThemeToggle();
+  setupEvents();
+  newQuestion();
+})();
+</script>
+</body>
+</html>
